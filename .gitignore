@@ -3,3 +3,4 @@
 *.txt
 *.ogg
 .ipynb_checkpoints
+__pycache__
