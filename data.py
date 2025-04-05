@@ -2,6 +2,7 @@ import glob
 import re
 import pandas as pd
 import numpy as np
+import torch
 from torch.utils.data import Dataset
 import torch.nn.functional as F
 import librosa
@@ -24,6 +25,6 @@ class BirdClefTrainAudio(Dataset):
 
     def __getitem__(self, idx):
         fname, label = self.data[idx]
-        y, sr = librosa.load(fname)
+        y, sr = librosa.load(fname, duration=5)
         stft = np.abs(librosa.stft(y))
-        return stft, label
+        return torch.tensor(stft.T, dtype=torch.float), torch.tensor(label, dtype=torch.long)
