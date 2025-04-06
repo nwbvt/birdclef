@@ -27,5 +27,5 @@ class ConvModel(nn.Module):
         # y is of the shape (N, 128 * 8 * 8)
         y = F.relu(self.fc1(y))
         # y is of the shape (N, 512)
-        y = F.softmax(self.fc2(y), 1)
+        y = self.fc2(y)
         return y

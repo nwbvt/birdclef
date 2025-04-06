@@ -4,3 +4,4 @@
 *.ogg
 .ipynb_checkpoints
 __pycache__
+*.pth
