@@ -12,16 +12,11 @@ from mimir.training import DEVICE
 def get_fnames(folder):
     return sorted(glob.glob(f"{folder}/*.ogg"))
 
-def stft(options={}):
-    return lambda y: np.abs(librosa.stft(y, **options)).T
-
 class BirdClefTrainAudio(Dataset):
     """Dataset for training data"""
-    def __init__(self, data_dir, transformer, max_duration=None, sr=32000):
+    def __init__(self, data_dir, max_duration):
         taxonomy = pd.read_csv(f"{data_dir}/taxonomy.csv")
         self.labels = taxonomy.primary_label.unique()
-        self.sr = sr
-        self.transformer=transformer
         self.n_labels = len(self.labels)
         self.max_duration = max_duration
         self.data = [(fname, i)
@@ -33,8 +28,9 @@ class BirdClefTrainAudio(Dataset):
 
     def __getitem__(self, idx):
         fname, label = self.data[idx]
-        y, sr = librosa.load(fname, duration=self.max_duration, sr=self.sr)
-        return torch.tensor(self.transformer(y), dtype=torch.float), torch.tensor(label, dtype=torch.long)
+        y, sr = librosa.load(fname, duration=self.max_duration)
+        stft = np.abs(librosa.stft(y))
+        return torch.tensor(stft.T, dtype=torch.float), torch.tensor(label, dtype=torch.long)
 
     def label_weights(self):
         freqs = Counter([label for _, label in self.data])
