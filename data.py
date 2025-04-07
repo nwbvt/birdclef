@@ -93,6 +93,6 @@ class BirdClefHarmonics(Dataset):
     def __getitem__(self, idx):
         f0 = self.f0s[idx]
         harmonics = self.harmonics[idx]
-        input = np.concatenate([f0.reshape((1,-1)), harmonics], axis=0)
-        label = self.labels[idx]
+        input = torch.tensor(np.concatenate([f0.reshape((1,-1)), harmonics], axis=0), dtype=torch.float).T
+        label = torch.tensor(self.labels[idx], dtype=torch.long)
         return input, label
