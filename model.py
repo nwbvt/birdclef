@@ -54,5 +54,5 @@ class HarmonicModel(nn.Module):
         v = torch.matmul(attention, conved.transpose(1,-1))
         y = torch.relu(self.fc1(v))
         y = self.dropout(y)
-        y = torch.sigmoid(self.fc2(y)).squeeze()
+        y = self.fc2(y).squeeze()
         return y

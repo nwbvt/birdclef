@@ -17,9 +17,12 @@ def get_fnames(folder):
 class BirdClefTrainAudio():
     """Loader for training data"""
     def __init__(self, data_dir, max_duration, sr=32000):
-        taxonomy = pd.read_csv(f"{data_dir}/taxonomy.csv")
-        self.labels = taxonomy.primary_label.unique()
+        self.taxonomy = pd.read_csv(f"{data_dir}/taxonomy.csv", index_col="primary_label")
+        self.labels = self.taxonomy.index
+        class_map = {class_name: i for i, class_name in enumerate(self.taxonomy.class_name.unique())}
+        self.classes = {i: class_map[self.taxonomy.loc[label].class_name] for i, label in enumerate(self.labels)}
         self.n_labels = len(self.labels)
+        self.n_classes = self.taxonomy.class_name.nunique()
         self.max_duration = max_duration
         self.sr = sr
         self.data = [(fname, i)
@@ -35,7 +38,11 @@ class BirdClefTrainAudio():
 
     def label_weights(self):
         freqs = Counter([label for _, label in self.data])
-        return [1/f for f in freqs.values()]
+        return [self.n_labels/f**2 for f in freqs.values()]
+
+    def class_weights(self):
+        freqs = Counter(self.classes.values())
+        return [self.n_labels/f for f in freqs.values()]
 
 class BirdClefSTFTData(Dataset):
     """Dataset for training data"""
@@ -47,7 +54,7 @@ class BirdClefSTFTData(Dataset):
 
     def __getitem__(self, idx):
         fname, label = self.audio[idx]
-        y, sr = librosa.load(fname, duration=self.max_duration, sr=self.sr)
+        y, sr = librosa.load(fname, duration=self.audio.max_duration, sr=self.audio.sr)
         stft = np.abs(librosa.stft(y))
         return torch.tensor(stft.T, dtype=torch.float), torch.tensor(label, dtype=torch.long)
 
@@ -96,3 +103,15 @@ class BirdClefHarmonics(Dataset):
         input = torch.tensor(np.concatenate([f0.reshape((1,-1)), harmonics], axis=0), dtype=torch.float).T
         label = torch.tensor(self.labels[idx], dtype=torch.long)
         return input, label
+
+class BirdClefClassDS(Dataset):
+    def __init__(self, audio: BirdClefTrainAudio, base: Dataset):
+        self.audio = audio
+        self.base = base
+
+    def __len__(self):
+        return len(self.base)
+
+    def __getitem__(self, idx):
+        x, label = self.base[idx]
+        return x, torch.tensor(self.audio.classes[label.item()], dtype=torch.long)
