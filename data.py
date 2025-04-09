@@ -44,6 +44,19 @@ class BirdClefTrainAudio():
         freqs = Counter(self.classes.values())
         return [self.n_labels/f for f in freqs.values()]
 
+class BirdClefRawAudioData(Dataset):
+    """Dataset for raw audio data"""
+    def __init__(self, audio: BirdClefTrainAudio):
+        self.audio = audio
+
+    def __len__(self):
+        return len(self.audio)
+
+    def __getitem__(self, idx):
+        fname, label = self.audio[idx]
+        y, sr = librosa.load(fname, duration=self.audio.max_duration, sr=self.audio.sr)
+        return torch.tensor(y.T, dtype=torch.float), torch.tensor(label, dtype=torch.long)
+
 class BirdClefSTFTData(Dataset):
     """Dataset for training data"""
     def __init__(self, audio: BirdClefTrainAudio):
